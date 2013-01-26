@@ -14,6 +14,7 @@ object ApplicationBuild extends Build {
     "com.github.seratch" %% "scalikejdbc" % "[1.4,)",
     "com.github.seratch" %% "scalikejdbc-play-plugin" % "[1.4,)",
     "com.github.seratch" %% "scalikejdbc-interpolation" % "[1.4,)",
+    "jp.t2v" %% "play21.auth" % "0.6",
     "org.slf4j" % "slf4j-simple" % "[1.7,)"
   )
 

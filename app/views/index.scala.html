@@ -1,6 +1,6 @@
-@(message: String)
+@(name: String)
 
 @main("Welcome to Play 2.1") {
-        hello
-    @{models.User.findByEmail("user@example.com").isDefined}
+hello, @name
+<p><a href="@routes.Application.logout">logout</a></p>
 }
