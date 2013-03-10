@@ -95,4 +95,8 @@ object Application extends Controller with LoginLogout with AuthConfigImpl with 
   def logout = Action {implicit request =>
     gotoLogoutSucceeded
   }
+
+  def chat = Action {
+    Ok(views.html.chat(""));
+  }
 }

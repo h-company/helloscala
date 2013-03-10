@@ -1,0 +1,81 @@
+@(message: String)
+
+<!DOCTYPE html>
+<meta charset="utf-8" />
+<title>WebSocket Test</title>
+<style type="text/css">
+    p { margin: 0; }
+</style>
+<script language="javascript" type="text/javascript" src="/assets/javascripts/jquery-1.9.0.min.js"></script>
+<script language="javascript" type="text/javascript">
+    var wsUri = "ws://192.168.11.2:9000/websocket";
+    var output;
+    function init() {
+    output = document.getElementById("output");
+    testWebSocket();
+    }
+    function testWebSocket() {
+    websocket = new WebSocket(wsUri);
+    websocket.onopen = function(evt) { onOpen(evt) };
+    websocket.onclose = function(evt) { onClose(evt) };
+    websocket.onmessage = function(evt) { onMessage(evt) };
+    websocket.onerror = function(evt) { onError(evt) };
+    }
+    function onOpen(evt) {
+    writeToScreen("CONNECTED");
+
+    }
+    function onClose(evt) {
+    writeToScreen("DISCONNECTED");
+    testWebSocket();
+    }
+    function onMessage(evt) {
+    writeToScreen('<span style="color: blue;">' + evt.data+'</span>');
+    //    websocket.close();
+    if (evt.data.match(/こんにちは/)) {
+    //        doSend(evt.data +" "+ evt.data);
+    }
+    if (evt.data.match(/たんインしたお$/)) {
+    var name = evt.data.match(/(.*)たんインしたお$/)[1];
+    console.log(name);
+    doSend(name+"さんこんにちは^^");
+    if (name == "wataru") {
+    //            doSend("/kick "+name);
+    }
+    }
+    //    if (evt.data.match(/^Set/)) {
+    //        var line = evt.data.match(/^Set\((.*)\)/)[1];
+    //        var names = line.split(",");
+    //        jQuery.each(names, function(i, e){
+    //            var name = e.replace(/(^\s+)|(\s+$)/g, "");
+    //            if (name != "tsutomu") doSend("/kick "+ name);
+    //        });
+    //    }
+    }
+    function onError(evt) {
+    writeToScreen('<span style="color: red;">ERROR:</span> ' + evt.data);
+    }
+    function doSend(message) {
+    //    writeToScreen("SENT: " + message);
+    websocket.send(message);
+    }
+    function writeToScreen(message) {
+    $("#output").html("<p>"+ message +"</p>"+$("#output").html());
+    //    var pre = document.createElement("p");
+    //    pre.style.wordWrap = "break-word";
+    //    pre.innerHTML = message;
+    //    output.appendChild(pre);
+    }
+    window.addEventListener("load", init, false);
+    function send(event) {
+    if (event.keyCode != 13) return;
+    doSend($("#line").val());
+    $("#line").val("");
+    }
+</script>
+<h2>WebSocket Test</h2>
+<input type="text" id="line" onkeyup="send(event);" />
+<div id="output"></div>
+</html>
+
+
