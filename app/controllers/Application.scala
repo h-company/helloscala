@@ -5,8 +5,15 @@ import play.api.data.Forms._
 import play.api.mvc._
 import jp.t2v.lab.play20.auth._
 import views.html
+import play.api.libs.iteratee.{Concurrent, Enumerator, Iteratee}
+import collection.concurrent.TrieMap
+import java.util.concurrent.atomic.AtomicReference
 
 object Application extends Controller with LoginLogout with AuthConfigImpl with Auth {
+
+  val channels = new AtomicReference(Set[Concurrent.Channel[String]]())
+
+  val nameMap = Map()
 
   type LoginForm = Form[(String, String)]
 
@@ -22,6 +29,24 @@ object Application extends Controller with LoginLogout with AuthConfigImpl with 
     Ok(views.html.login(loginForm))
   }
 
+  def indexWebSocket = WebSocket.using[String] { request =>
+
+    val (out, channel) = Concurrent.broadcast[String]
+    var c: Set[Concurrent.Channel[String]] = null
+    do {
+      c = channels.get()
+    } while (!channels.compareAndSet(c, c + channel))
+
+  // Log events to the console
+    val in = Iteratee.foreach[String]{message => {println(request.remoteAddress + ":" + message);channels.get.foreach(_.push(nameMap(request.remoteAddress) + ":" + message))}}.mapDone { _ =>
+      var c: Set[Concurrent.Channel[String]] = null
+      do {
+        c = channels.get()
+      } while (!channels.compareAndSet(c, c - channel))
+    }
+
+    (in, out)
+  }
   //  def authenticate = Action {
   //    implicit request =>
   //      loginForm.bindFromRequest.fold(
