@@ -11,9 +11,9 @@ import java.util.concurrent.atomic.AtomicReference
 
 object Application extends Controller with LoginLogout with AuthConfigImpl with Auth {
 
-  val channels = new AtomicReference(Set[Concurrent.Channel[String]]())
+  val channels = TrieMap[String, Concurrent.Channel[String]]()
 
-  val nameMap = Map()
+  val nameMap = Map(""->"")
 
   type LoginForm = Form[(String, String)]
 
@@ -29,24 +29,41 @@ object Application extends Controller with LoginLogout with AuthConfigImpl with 
     Ok(views.html.login(loginForm))
   }
 
+  val KickAll = """^/kick all""".r
+  val Kick = """^/kick (.*)""".r
+  val Who = """^/who$""".r
+
   def indexWebSocket = WebSocket.using[String] { request =>
 
+    val name = nameMap(request.remoteAddress)
+
     val (out, channel) = Concurrent.broadcast[String]
-    var c: Set[Concurrent.Channel[String]] = null
-    do {
-      c = channels.get()
-    } while (!channels.compareAndSet(c, c + channel))
+    channels.putIfAbsent(name, channel)
+    printAll(name + "たんインしたお")
 
   // Log events to the console
-    val in = Iteratee.foreach[String]{message => {println(request.remoteAddress + ":" + message);channels.get.foreach(_.push(nameMap(request.remoteAddress) + ":" + message))}}.mapDone { _ =>
-      var c: Set[Concurrent.Channel[String]] = null
-      do {
-        c = channels.get()
-      } while (!channels.compareAndSet(c, c - channel))
+    val in = Iteratee.foreach[String] {
+      case KickAll() => {printAll(name + "にキックされました");channels.values.foreach(_.eofAndEnd())}
+      case Kick(target) => {(channels remove target).foreach{channel => print(name + "にキックされました", channel);channel.eofAndEnd()}}
+      case Who() => print(channels.keys.toString, channels(name))
+      case message => printAll(name + ":" + message)
+    }.mapDone { _ =>
+      channels -= name
+      printAll(name + " はいなくなった")
     }
 
     (in, out)
   }
+  private def print(msg: String, channel: Concurrent.Channel[String]) {
+    println(msg)
+    channel.push(msg)
+  }
+
+  private def printAll(msg: String) {
+    println(msg)
+    channels.values.foreach(_.push(msg))
+  }
+
   //  def authenticate = Action {
   //    implicit request =>
   //      loginForm.bindFromRequest.fold(
