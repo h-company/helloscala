@@ -13,7 +13,7 @@ object Application extends Controller with LoginLogout with AuthConfigImpl with 
 
   val channels = TrieMap[String, Concurrent.Channel[String]]()
 
-  val nameMap = Map(""->"")
+  val nameMap = Map()
 
   type LoginForm = Form[(String, String)]
 
@@ -32,6 +32,7 @@ object Application extends Controller with LoginLogout with AuthConfigImpl with 
   val KickAll = """^/kick all""".r
   val Kick = """^/kick (.*)""".r
   val Who = """^/who$""".r
+  val Direct = """^@(.*?) (.*)""".r
 
   def indexWebSocket = WebSocket.using[String] { request =>
 
@@ -46,6 +47,7 @@ object Application extends Controller with LoginLogout with AuthConfigImpl with 
       case KickAll() => {printAll(name + "にキックされました");channels.values.foreach(_.eofAndEnd())}
       case Kick(target) => {(channels remove target).foreach{channel => print(name + "にキックされました", channel);channel.eofAndEnd()}}
       case Who() => print(channels.keys.toString, channels(name))
+      case Direct(target, msg) => print(name + ":@" + target + " " + msg, channels(target))
       case message => printAll(name + ":" + message)
     }.mapDone { _ =>
       channels -= name
